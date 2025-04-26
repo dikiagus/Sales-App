@@ -1,0 +1,185 @@
+﻿@using X.PagedList.Mvc.Core
+@using X.PagedList
+@model SalesApp.Models.SOOrderIndexViewModel
+
+@{
+    ViewData["Title"] = "Sales Orders";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4 fw-bold text-primary">📦 Sales Orders</h2>
+
+    <!-- Filter Form -->
+    <form method="get" class="row g-3 align-items-end bg-light p-4 rounded shadow-sm mb-4">
+        <div class="col-md-4">
+            <label class="form-label">🔍 Keyword (SO Number / Customer Name)</label>
+            <input type="text" name="Keyword" value="@Model.Keyword" class="form-control" placeholder="Search..." />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">📅 Start Date</label>
+            <input type="date" name="StartDate" value="@Model.StartDate?.ToString("yyyy-MM-dd")" class="form-control" />
+        </div>
+        <div class="col-md-2 d-grid">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-search"></i> Search
+            </button>
+        </div>
+        <div class="col-md-2 d-grid">
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-x-circle"></i> Reset Filter
+            </a>
+        </div>
+    </form>
+
+    <!-- Action Buttons -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a asp-action="Create" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Tambah Data
+        </a>
+        <a asp-action="ExportToExcel"
+           asp-route-keyword="@Model.Keyword"
+           asp-route-startDate="@Model.StartDate?.ToString("yyyy-MM-dd")"
+           class="btn btn-outline-success">
+            <img src="~/images/excel-icon.png" style="height:20px; margin-right: 5px;" />
+            Export to Excel
+        </a>
+    </div>
+
+    <!-- Success Message -->
+    <div id="successMessage" class="alert alert-success alert-dismissible fade show d-none" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i> Data berhasil dihapus!
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-responsive shadow-sm">
+        <table class="table table-bordered table-striped">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th>No</th>
+                    <th>Actions</th>
+                    <th>Sales Order</th>
+                    <th>Order Date</th>
+                    <th>Customer</th>
+                    <th>Address</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < Model.Orders.Count; i++)
+                {
+                    <tr>
+                        <td class="text-center">@((Model.PageIndex - 1) * Model.PageSize + i + 1)</td>
+                        <td class="text-center">
+                            <a asp-action="Edit"
+                               asp-route-id="@Model.Orders[i].SO_ORDER_ID"
+                               asp-route-page="@Model.PageIndex"
+                               class="btn btn-sm btn-warning me-2" title="Edit">
+                                ✏️
+                            </a>
+                            <button type="button"
+                                    class="btn btn-sm btn-danger"
+                                    onclick="openDeleteModal('@Model.Orders[i].SO_ORDER_ID')"
+                                    title="Delete">
+                                🗑
+                            </button>
+                        </td>
+                        <td>@Model.Orders[i].SO_ORDER_ID</td>
+                        <td>@Model.Orders[i].OrderDate.ToString("dd-MM-yyyy")</td>
+                        <td>@Model.Orders[i].Customer?.CustomerName</td>
+                        <td>@Model.Orders[i].Address</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="d-flex justify-content-center mt-4">
+        @Html.PagedListPager(Model.Orders, page => Url.Action("Index", new
+            {
+                page,
+                keyword = Model.Keyword,
+                startDate = Model.StartDate?.ToString("yyyy-MM-dd")
+            }), new PagedListRenderOptions
+   {
+       LiElementClasses = new[] { "page-item" },
+       PageClasses = new[] { "page-link" },
+       UlElementClasses = new[] { "pagination" },
+       Display = PagedListDisplayMode.IfNeeded
+   })
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+<!-- Modal Konfirmasi Delete -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center">
+            <div class="modal-body">
+                <div class="mb-3">
+                    <i class="bi bi-question-circle-fill" style="font-size: 60px; color: red;"></i>
+                </div>
+                <h5 class="mb-4">Do you want to Delete?</h5>
+                <button type="button" class="btn btn-danger me-2" onclick="confirmDelete()">Yes</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Sukses -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center">
+            <div class="modal-body">
+                <div class="mb-3">
+                    <i class="bi bi-check-circle-fill" style="font-size: 60px; color: green;"></i>
+                </div>
+                <h5 class="mb-4">Data berhasil dihapus!</h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script -->
+<script>
+    var idToDelete = null;
+
+    function openDeleteModal(id) {
+        idToDelete = id;
+        var myModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'), {
+            keyboard: false
+        });
+        myModal.show();
+    }
+
+    function confirmDelete() {
+        if (!idToDelete) return;
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+        fetch('/SalesOrder/Delete/' + idToDelete, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': token
+            }
+        })
+            .then(response => {
+                if (response.ok) {
+                    var deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
+                    deleteModal.hide();
+
+                    var successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                    successModal.show();
+
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    alert('Gagal menghapus data!');
+                }
+            });
+    }
+</script>

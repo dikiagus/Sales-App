@@ -1,0 +1,44 @@
+## Ignore Visual Studio files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Ignore build results
+[Bb]in/
+[Oo]bj/
+*.dll
+*.exe
+*.log
+*.pdb
+*.cache
+
+## Ignore packages
+packages/
+*.nupkg
+project.lock.json
+project.fragment.lock.json
+
+## Ignore NuGet stuff
+*.nupkg
+.nuget/
+
+## Ignore web publish and Azure stuff
+publish/
+*.Publish.xml
+*.pubxml
+*.publishproj
+
+## SQL Server generated files
+*.mdf
+*.ldf
+
+## Others
+*.dbmdl
+*.jfm
+_ReSharper*/
+*.vspscc
+*.vssscc
+*.idea/
+*.vscode/
