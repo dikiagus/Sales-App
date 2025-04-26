@@ -4,177 +4,176 @@
     ViewData["Title"] = "Tambah Sales Order";
 }
 
-<h2>ADD NEW – SALES ORDER</h2>
+<div class="container mt-4">
+    <h2 class="text-center mb-4 text-primary fw-bold">📄 Tambah Sales Order</h2>
 
-<form asp-action="Create" method="post">
-    <div class="card">
-        <div class="card-header">Sales Order Information</div>
-        <div class="card-body">
-            <div class="form-row">
-                <div class="form-group col-md-4">
-                    <label asp-for="SalesOrderNumber"></label>
-                    <input asp-for="SalesOrderNumber" class="form-control" />
-                </div>
-                <div class="form-group col-md-4">
-                    <label asp-for="OrderDate"></label>
-                    <input asp-for="OrderDate" type="date" class="form-control"
-                           value="@(Model.OrderDate == DateTime.MinValue ? "" : Model.OrderDate.ToString("yyyy-MM-dd"))" />
-                </div>
-                <div class="form-group col-md-4">
-                    <label asp-for="CustomerId"></label>
-                    <select asp-for="CustomerId" asp-items="Model.Customers" class="form-control">
-                        <option value="">Select One</option>
-                    </select>
+    <form asp-action="Create" method="post">
+        <div class="card shadow-sm mb-4 border-0">
+            <div class="card-header bg-primary text-white fw-semibold">
+                📝 Sales Order Information
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label asp-for="SalesOrderNumber" class="form-label"></label>
+                        <input asp-for="SalesOrderNumber" class="form-control" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="OrderDate" class="form-label"></label>
+                        <input asp-for="OrderDate" type="date" class="form-control"
+                               value="@(Model.OrderDate == DateTime.MinValue ? "" : Model.OrderDate.ToString("yyyy-MM-dd"))" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="CustomerId" class="form-label"></label>
+                        <select asp-for="CustomerId" asp-items="Model.Customers" class="form-select">
+                            <option value="">Select One</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Address" class="form-label mt-2"></label>
+                        <textarea asp-for="Address" class="form-control" rows="2"></textarea>
+                    </div>
                 </div>
             </div>
-            <div class="form-group">
-                <label asp-for="Address"></label>
-                <textarea asp-for="Address" class="form-control"></textarea>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                🧾 Detail Item Information
+                <button type="button" class="btn btn-light btn-sm border" id="btnAddItem">➕ Add Item</button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped">
+                        <thead class="table-dark text-center">
+                            <tr class="text-center">
+                                <th>No</th>
+                                <th>Action</th>
+                                <th>Item Name</th>
+                                <th>Qty</th>
+                                <th>Price</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsTable">
+                            @for (int i = 0; i < Model.Items.Count; i++)
+                            {
+                                <tr>
+                                    <td class="text-center">@(@i + 1)</td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-outline-success">💾</button>
+                                    </td>
+                                    <td><input name="Items[@i].ItemName" class="form-control" value="@Model.Items[i].ItemName" /></td>
+                                    <td><input name="Items[@i].Qty" class="form-control" type="number" value="@Model.Items[i].Qty" /></td>
+                                    <td><input name="Items[@i].Price" class="form-control" type="number" value="@Model.Items[i].Price" /></td>
+                                    <td><span class="form-control-plaintext">@(@Model.Items[i].Qty * @Model.Items[i].Price)</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex justify-content-center mt-3 align-items-center gap-2">
+                    <button type="button" class="btn btn-secondary" id="prevPageBtn">Previous</button>
+                    <div id="pageNumbers" class="btn-group"></div>
+                    <button type="button" class="btn btn-secondary" id="nextPageBtn">Next</button>
+                </div>
+
+                <div class="text-end mt-3">
+                    <p class="fw-semibold">
+                        Total Item: @Model.Items.Count |
+                        Total Amount: <span class="text-success">@Model.Items.Sum(i => i.Qty * i.Price).ToString("N0")</span>
+                    </p>
+                </div>
             </div>
         </div>
-    </div>
 
-    <br />
-
-    <div class="card">
-        <div class="card-header d-flex justify-content-between">
-            Detail Item Information
-            <button type="button" class="btn btn-danger btn-sm" id="btnAddItem">Add Item</button>
+        <div class="d-flex justify-content-end mt-4 gap-2">
+            <button type="submit" class="btn btn-primary px-4">Save</button>
+            <a asp-action="Index" class="btn btn-danger px-4">Close</a>
         </div>
-        <div class="card-body">
-            <table class="table table-bordered" id="detailTable">
-                <thead>
-                    <tr>
-                        <th>No</th>
-                        <th>Action</th>
-                        <th>Item Name</th>
-                        <th>Qty</th>
-                        <th>Price</th>
-                        <th>Total</th>
-                    </tr>
-                </thead>
+    </form>
+</div>
 
-                @section Scripts {
-                    <script>
-                        let itemIndex = @Model.Items.Count;
-                        let currentPage = 1;
-                        const itemsPerPage = 5;
+@section Scripts {
+    <script>
+        let itemIndex = @Model.Items.Count;
+        let currentPage = 1;
+        const itemsPerPage = 5;
 
-                        function renderItemsPage() {
-                            const rows = document.querySelectorAll("#itemsTable tr");
-                            const totalPages = Math.ceil(rows.length / itemsPerPage);
+        function renderItemsPage() {
+            const rows = document.querySelectorAll("#itemsTable tr");
+            const totalPages = Math.ceil(rows.length / itemsPerPage);
 
-                            rows.forEach((row, index) => {
-                                const start = (currentPage - 1) * itemsPerPage;
-                                const end = currentPage * itemsPerPage;
-                                row.style.display = (index >= start && index < end) ? "" : "none";
-                            });
+            rows.forEach((row, index) => {
+                const start = (currentPage - 1) * itemsPerPage;
+                const end = currentPage * itemsPerPage;
+                row.style.display = (index >= start && index < end) ? "" : "none";
+            });
 
-                            document.getElementById("prevPageBtn").disabled = currentPage === 1;
-                            document.getElementById("nextPageBtn").disabled = currentPage === totalPages || totalPages === 0;
+            document.getElementById("prevPageBtn").disabled = currentPage === 1;
+            document.getElementById("nextPageBtn").disabled = currentPage === totalPages || totalPages === 0;
 
-                            renderPageNumbers(totalPages);
-                        }
-
-                        function renderPageNumbers(totalPages) {
-    const pageNumbersDiv = document.getElementById("pageNumbers");
-    pageNumbersDiv.innerHTML = "";
-
-    for (let i = 1; i <= totalPages; i++) {
-        const btn = document.createElement("button");
-        btn.innerText = i;
-        btn.className = "btn btn-outline-primary";
-        if (i === currentPage) {
-            btn.classList.add("active");
+            renderPageNumbers(totalPages);
         }
 
-        btn.addEventListener("click", () => {
-            currentPage = i;
-            renderItemsPage();
+        function renderPageNumbers(totalPages) {
+            const pageNumbersDiv = document.getElementById("pageNumbers");
+            pageNumbersDiv.innerHTML = "";
+
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement("button");
+                btn.innerText = i;
+                btn.className = "btn btn-outline-primary";
+                if (i === currentPage) btn.classList.add("active");
+
+                btn.addEventListener("click", () => {
+                    currentPage = i;
+                    renderItemsPage();
+                });
+
+                pageNumbersDiv.appendChild(btn);
+            }
+        }
+
+        document.getElementById("btnAddItem").addEventListener("click", function () {
+            const table = document.getElementById("itemsTable");
+            const newRow = table.insertRow();
+
+            newRow.innerHTML = `
+                    <td class="text-center">${table.rows.length}</td>
+                    <td class="text-center"><button class="btn btn-sm btn-outline-success">💾</button></td>
+                    <td><input name="Items[${itemIndex}].ItemName" class="form-control" /></td>
+                    <td><input name="Items[${itemIndex}].Qty" type="number" class="form-control" /></td>
+                    <td><input name="Items[${itemIndex}].Price" type="number" class="form-control" /></td>
+                    <td><span class="form-control-plaintext">0</span></td>`;
+
+            itemIndex++;
+            goToLastPage();
         });
 
-        pageNumbersDiv.appendChild(btn);
-    }
+        function goToLastPage() {
+            const totalRows = document.querySelectorAll("#itemsTable tr").length;
+            currentPage = Math.ceil(totalRows / itemsPerPage);
+            renderItemsPage();
+        }
+
+        document.getElementById("prevPageBtn").addEventListener("click", () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderItemsPage();
+            }
+        });
+
+        document.getElementById("nextPageBtn").addEventListener("click", () => {
+            const totalRows = document.querySelectorAll("#itemsTable tr").length;
+            const totalPages = Math.ceil(totalRows / itemsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderItemsPage();
+            }
+        });
+
+        renderItemsPage();
+    </script>
 }
-
-                        document.getElementById("btnAddItem").addEventListener("click", function () {
-                            const table = document.getElementById("itemsTable");
-                            const newRow = table.insertRow();
-
-                            const cellNo = newRow.insertCell(0);
-                            const cellAction = newRow.insertCell(1);
-                            const cellItemName = newRow.insertCell(2);
-                            const cellQty = newRow.insertCell(3);
-                            const cellPrice = newRow.insertCell(4);
-                            const cellTotal = newRow.insertCell(5);
-
-                            cellNo.innerText = table.rows.length;
-                            cellAction.innerHTML = `<button class="btn ">💾</button>`;
-                            cellItemName.innerHTML = `<input name="Items[${itemIndex}].ItemName" class="form-control" />`;
-                            cellQty.innerHTML = `<input name="Items[${itemIndex}].Qty" type="number" class="form-control" />`;
-                            cellPrice.innerHTML = `<input name="Items[${itemIndex}].Price" type="number" class="form-control" />`;
-                            cellTotal.innerHTML = `<span class="form-control-plaintext">0</span>`;
-
-                            itemIndex++;
-                            goToLastPage();
-                        });
-
-                        function goToLastPage() {
-                            const totalRows = document.querySelectorAll("#itemsTable tr").length;
-                            currentPage = Math.ceil(totalRows / itemsPerPage);
-                            renderItemsPage();
-                        }
-
-                        document.getElementById("prevPageBtn").addEventListener("click", () => {
-                            if (currentPage > 1) {
-                                currentPage--;
-                                renderItemsPage();
-                            }
-                        });
-
-                        document.getElementById("nextPageBtn").addEventListener("click", () => {
-                            const totalRows = document.querySelectorAll("#itemsTable tr").length;
-                            const totalPages = Math.ceil(totalRows / itemsPerPage);
-                            if (currentPage < totalPages) {
-                                currentPage++;
-                                renderItemsPage();
-                            }
-                        });
-
-                        // Panggil saat pertama kali halaman dimuat
-                        renderItemsPage();
-                    </script>
-                }
-
-                <tbody id="itemsTable">
-                    @for (int i = 0; i < Model.Items.Count; i++)
-                    {
-                        <tr>
-                            <td>@(i + 1)</td>
-                            <td><button class="btn btn-sm btn-primary">💾</button></td>
-                            <td><input name="Items[@i].ItemName" class="form-control" value="@Model.Items[i].ItemName" /></td>
-                            <td><input name="Items[@i].Qty" class="form-control" type="number" value="@Model.Items[i].Qty" /></td>
-                            <td><input name="Items[@i].Price" class="form-control" type="number" value="@Model.Items[i].Price" /></td>
-                            <td><span class="form-control-plaintext">@(@Model.Items[i].Qty * @Model.Items[i].Price)</span></td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-
-            <div class="d-flex justify-content-center mt-3 align-items-center gap-2">
-                <button type="button" class="btn btn-secondary" id="prevPageBtn">Previous</button>
-                <div id="pageNumbers" class="btn-group"></div>
-                <button type="button" class="btn btn-secondary" id="nextPageBtn">Next</button>
-            </div>
-
-            <div class="text-right">
-                <p>Total Item: @Model.Items.Count | Total Amount: @Model.Items.Sum(i => i.Qty * i.Price).ToString("N0")</p>
-            </div>
-        </div>
-    </div>
-
-    <div class="mt-3 d-flex justify-content-end">
-        <button type="submit" class="btn btn-primary">Save</button>
-        <a asp-action="Index" class="btn btn-danger ms-3">Close</a>
-    </div>
-</form>
